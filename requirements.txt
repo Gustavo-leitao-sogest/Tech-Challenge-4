@@ -1,0 +1,34 @@
+# Núcleo
+pandas
+pyarrow
+numpy
+python-dotenv
+pydantic
+pyyaml
+tqdm
+
+# Embeddings, índices e busca
+sentence-transformers
+chromadb
+langchain-chroma
+rank-bm25
+nltk
+
+# Orquestração
+langchain-core
+langgraph
+
+# Provedor do LLM: descomente SÓ o que for usar
+# langchain-openai
+# langchain-anthropic
+# langchain-google-genai
+# langchain-ollama
+
+# Interface
+streamlit
+
+# Opcionais (usados apenas em etapas opcionais)
+# bertopic
+# ragas
+
+# Depois que tudo funcionar: pip freeze > requirements.lock.txt (reprodutibilidade)

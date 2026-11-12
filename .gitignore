@@ -1,0 +1,22 @@
+# Ambiente
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+
+# Segredos
+.env
+
+# Dados (nunca versionar)
+data/raw/*
+data/processed/*
+data/index/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/index/.gitkeep
+
+# Saídas locais
+eval/results/
+*.log

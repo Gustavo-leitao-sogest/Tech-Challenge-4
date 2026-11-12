@@ -27,6 +27,12 @@ langgraph
 # Interface
 streamlit
 
+# EDA (notebook)
+ipykernel
+nbformat
+nbconvert
+matplotlib
+
 # Opcionais (usados apenas em etapas opcionais)
 # bertopic
 # ragas

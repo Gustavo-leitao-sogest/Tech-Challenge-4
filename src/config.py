@@ -38,7 +38,8 @@ MIN_EVIDENCES = 3      # nº mínimo de evidências acima do limiar
 MAX_RETRIES = 1        # novas tentativas com HyDE antes de recusar
 
 # Preparação
-MIN_TEXT_CHARS = 3     # textos menores são descartados (rever no EDA)
+MIN_TEXT_ALNUM = 3     # mínimo de caracteres alfanuméricos; "..." e "ok" saem (decidido na EDA)
+DESCONHECIDO = "desconhecido"  # valor para metadado ausente (Chroma não aceita None)
 
 # Texto / BM25
 BM25_USE_STEMMING = False  # stemming RSLP nos tokens do BM25; o eval decide se liga

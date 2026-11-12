@@ -39,3 +39,6 @@ MAX_RETRIES = 1        # novas tentativas com HyDE antes de recusar
 
 # Preparação
 MIN_TEXT_CHARS = 3     # textos menores são descartados (rever no EDA)
+
+# Texto / BM25
+BM25_USE_STEMMING = False  # stemming RSLP nos tokens do BM25; o eval decide se liga

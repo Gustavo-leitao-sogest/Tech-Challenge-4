@@ -50,3 +50,28 @@ perguntas:
   - id: sem3
     pergunta: O que os clientes dizem sobre a entrega por drone?
     esperado: insuficiente
+
+# Calibração do limiar de suficiência (usada por `python -m eval.run_eval --calibrar`,
+# junto com pdf2, pdf5, meta3 e sem1-3)
+calibracao:
+  - id: cal_ok1
+    pergunta: produto chegou quebrado
+    esperado: ok
+  - id: cal_ok2
+    pergunta: vendedor não respondeu
+    esperado: ok
+  - id: cal_ok3
+    pergunta: produto diferente do anunciado
+    esperado: ok
+  - id: cal_ok4
+    pergunta: embalagem danificada
+    esperado: ok
+  - id: cal_ok5
+    pergunta: nota fiscal não veio
+    esperado: ok
+  - id: cal_sem1
+    pergunta: entrega por drone
+    esperado: insuficiente
+  - id: cal_sem2
+    pergunta: pagamento com criptomoeda
+    esperado: insuficiente

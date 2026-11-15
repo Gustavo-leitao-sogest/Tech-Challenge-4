@@ -5,6 +5,19 @@ from unittest import mock
 from eval import run_eval as ev
 
 
+class TestModeloEval(unittest.TestCase):
+    def test_main_desliga_fallback(self):
+        with mock.patch.object(ev.config, "LLM_FALLBACK_MODELS", ["a", "b"]), \
+             mock.patch.object(ev, "cmd_config"), \
+             mock.patch("sys.argv", ["run_eval", "--config", "hibrida"]):
+            ev.main()
+            self.assertEqual(ev.config.LLM_FALLBACK_MODELS, [])
+
+    def test_modelos_usados(self):
+        self.assertEqual(ev.modelos_usados([{"modelo": "b"}, {"modelo": "a"}, {"modelo": ""}]), "a, b")
+        self.assertEqual(ev.modelos_usados([{"modelo": ""}]), "n/d")
+
+
 class TestEval(unittest.TestCase):
     def test_carregar_perguntas_reais(self):
         ps = ev.carregar_perguntas()

@@ -232,7 +232,7 @@ def rodar_pergunta(p: dict, modo: str, juiz: bool) -> dict:
              "tentativas": 0, "n_evidencias": 0, "n_citacoes": 0, "citacoes_validas": False,
              "tem_citacao": False, "top1": None, "top3_media": None, "precision_k": None,
              "precision_proximas": None, "faithfulness": None, "latencia_s": None,
-             "tentativas_eval": 0, "erro": ""}
+             "tentativas_eval": 0, "modelo": "", "erro": ""}
     marca = {"t0": 0.0, "n": 0}
 
     def executar():
@@ -255,6 +255,7 @@ def rodar_pergunta(p: dict, modo: str, juiz: bool) -> dict:
     tipo = (final.get("analise") or {}).get("tipo", "")
     linha.update(
         status=r.status, tentativas=r.tentativas, n_evidencias=len(evid),
+        modelo=r.modelo or "",
         rota="fora" if r.status == "fora_de_escopo" else tipo,
         top1=scores[0] if scores else None,
         top3_media=media(scores[:3]) if scores else None,
@@ -280,6 +281,11 @@ def rodar_pergunta(p: dict, modo: str, juiz: bool) -> dict:
     return linha
 
 
+def modelos_usados(linhas: list[dict]) -> str:
+    """Modelos que responderam na execução (vírgulas), para o cabeçalho do MD."""
+    return ", ".join(sorted({l["modelo"] for l in linhas if l.get("modelo")})) or "n/d"
+
+
 def salvar(linhas: list[dict], agg: dict, nome: str) -> tuple[Path, Path]:
     """Grava CSV (uma linha por pergunta) e MD (tabela-resumo) em eval/results/."""
     RESULTS.mkdir(parents=True, exist_ok=True)
@@ -289,7 +295,8 @@ def salvar(linhas: list[dict], agg: dict, nome: str) -> tuple[Path, Path]:
         w = csv.DictWriter(f, fieldnames=list(linhas[0].keys()))
         w.writeheader()
         w.writerows(linhas)
-    md_p.write_text(tabela_resumo(agg, nome) + "\n", encoding="utf-8")
+    md_p.write_text(f"Modelo: {modelos_usados(linhas)}\n\n" + tabela_resumo(agg, nome) + "\n",
+                    encoding="utf-8")
     return csv_p, md_p
 
 
@@ -458,6 +465,8 @@ def cmd_calibrar() -> None:
 def main() -> None:
     """Ponto de entrada da linha de comando."""
     sys.stdout.reconfigure(encoding="utf-8")
+    # Sem fallback de modelo: misturar modelos numa execução tornaria os números incomparáveis.
+    config.LLM_FALLBACK_MODELS = []
     ap = argparse.ArgumentParser(description="Eval do RAG")
     ap.add_argument("--config", choices=["hibrida", "densa"])
     ap.add_argument("--sem-juiz", action="store_true", help="pula precision@k e faithfulness")

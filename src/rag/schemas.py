@@ -50,3 +50,4 @@ class RagResult(BaseModel):
     consulta_transformada: str | None = None
     filtros: dict = {}
     contagens: dict | None = None  # rota panorâmica: frequências calculadas no código
+    tentativas: int = 0  # reescritas HyDE feitas antes da resposta

@@ -44,7 +44,7 @@ ANO_MES_LIMITE_INF = "2016-01"
 ANO_MES_LIMITE_SUP = "2018-12"
 
 # Guardrails (calibrar no eval; NÃO chutar)
-MIN_SCORE = 0.80       # placeholder: similaridade mínima da melhor evidência
+MIN_SCORE = 0.90       # provisório: separa 0,81–0,89 (sem evidência) de 0,93–0,96 (boas) em amostra inicial; calibrar no eval
 MIN_EVIDENCES = 3      # nº mínimo de evidências acima do limiar
 MAX_RETRIES = 1        # novas tentativas com HyDE antes de recusar
 

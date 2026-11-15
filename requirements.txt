@@ -21,7 +21,7 @@ langgraph
 # Provedor do LLM: descomente SÓ o que for usar
 # langchain-openai
 # langchain-anthropic
-# langchain-google-genai
+langchain-google-genai
 # langchain-ollama
 
 # Interface

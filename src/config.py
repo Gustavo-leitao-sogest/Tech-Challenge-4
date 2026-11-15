@@ -20,6 +20,8 @@ CHROMA_COLLECTION = "olist_reviews"
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
 LLM_MODEL = os.getenv("LLM_MODEL", "")
 LLM_TEMPERATURE = 0.0
+LLM_MAX_RETRIES = 3     # novas tentativas do cliente em erros transitórios (ex.: 503)
+LLM_TIMEOUT = 60        # segundos por chamada ao LLM
 
 # Embeddings
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")

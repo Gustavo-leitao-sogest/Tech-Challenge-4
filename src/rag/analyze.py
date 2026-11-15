@@ -7,7 +7,7 @@ import pandas as pd
 
 from src import config
 from src.rag.llm import get_llm
-from src.rag.prompts import MSG_FORA_DE_ESCOPO, PROMPT_ANALISE_V2
+from src.rag.prompts import MSG_FORA_DE_ESCOPO, PROMPT_ANALISE_V4
 from src.rag.schemas import AnalisePergunta
 
 log = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ def _invocar_analise(prompt: str, pergunta: str) -> tuple[AnalisePergunta, bool]
 def analisar_pergunta(state: dict) -> dict:
     """Analisa a pergunta com o LLM e monta consulta, filtros e status de escopo."""
     validas = listar_categorias()
-    prompt = PROMPT_ANALISE_V2.format(
+    prompt = PROMPT_ANALISE_V4.format(
         pergunta=state["pergunta"], categorias="\n".join(validas)
     )
     analise, _ = _invocar_analise(prompt, state["pergunta"])

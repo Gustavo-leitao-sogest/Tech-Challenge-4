@@ -35,6 +35,13 @@ TOP_K_DENSE = 50       # candidatos da busca densa
 TOP_K_BM25 = 50        # candidatos do BM25
 RRF_K = 60             # constante do Reciprocal Rank Fusion (IA Gen Aula 2)
 TOP_K_CONTEXT = 15     # evidências enviadas ao LLM
+RETRIEVAL_MODE = "hibrida"  # "densa" | "hibrida" (o eval compara os dois)
+PANORAMA_FETCH_K = 80  # candidatos da busca densa antes do MMR (rota panorâmica)
+PANORAMA_K = 25        # evidências diversas devolvidas pela rota panorâmica
+MMR_LAMBDA = 0.5       # 1 = só relevância, 0 = só diversidade
+# Limites do período da base (Olist), para expandir intervalos de ano_mes abertos
+ANO_MES_LIMITE_INF = "2016-01"
+ANO_MES_LIMITE_SUP = "2018-12"
 
 # Guardrails (calibrar no eval; NÃO chutar)
 MIN_SCORE = 0.80       # placeholder: similaridade mínima da melhor evidência

@@ -1,6 +1,7 @@
 """Configuração central: caminhos, parâmetros e variáveis de ambiente."""
 from pathlib import Path
 import os
+import sys
 
 from dotenv import load_dotenv
 
@@ -12,7 +13,8 @@ DATA_RAW = ROOT / "data" / "raw"
 DATA_PROCESSED = ROOT / "data" / "processed"
 DATA_INDEX = ROOT / "data" / "index"
 REVIEWS_PARQUET = DATA_PROCESSED / "reviews.parquet"
-CHROMA_DIR = DATA_INDEX / "chroma"
+# No Windows o Chroma exige caminho ASCII (ver chroma_path); pode ser trocado via .env.
+CHROMA_DIR = Path(os.getenv("CHROMA_DIR") or DATA_INDEX / "chroma")
 BM25_PATH = DATA_INDEX / "bm25.pkl"
 CHROMA_COLLECTION = "olist_reviews"
 
@@ -45,3 +47,26 @@ DESCONHECIDO = "desconhecido"  # valor para metadado ausente (Chroma não aceita
 
 # Texto / BM25
 BM25_USE_STEMMING = False  # stemming RSLP nos tokens do BM25; o eval decide se liga
+
+
+def chroma_path(caminho: Path | str | None = None) -> str:
+    """Caminho do Chroma pronto para uso (todo código que abrir o índice deve usá-lo).
+
+    No Windows, o backend em Rust não grava/lê os arquivos do HNSW em pastas com
+    caracteres não-ASCII. Converte para o nome curto 8.3; se ainda sobrar não-ASCII,
+    levanta erro orientando a definir CHROMA_DIR em uma pasta só ASCII.
+    """
+    caminho = Path(caminho if caminho is not None else CHROMA_DIR)
+    caminho.mkdir(parents=True, exist_ok=True)
+    texto = str(caminho.resolve())
+    if sys.platform != "win32" or texto.isascii():
+        return texto
+    import ctypes
+    buf = ctypes.create_unicode_buffer(1024)
+    if ctypes.windll.kernel32.GetShortPathNameW(texto, buf, 1024) and buf.value.isascii():
+        return buf.value
+    raise RuntimeError(
+        f"O Chroma no Windows exige caminho ASCII e o nome curto 8.3 não está disponível "
+        f"para '{texto}'. Defina CHROMA_DIR no .env apontando para uma pasta só ASCII "
+        r"(ex.: C:\chroma_olist)."
+    )

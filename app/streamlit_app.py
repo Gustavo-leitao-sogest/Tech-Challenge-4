@@ -183,6 +183,7 @@ def mostrar_rastreabilidade(res, latencia: float | None) -> None:
         rota = "panorâmica (amostra diversificada)" if amostra is not None else "específica"
         st.markdown(f"**Rota:** {rota} · **Reescritas:** {res.tentativas}")
         st.markdown(f"**Evidências recuperadas:** {len(res.evidencias)}")
+        st.markdown(f"**Modelo:** {res.modelo or 'n/d'}")
         if amostra is not None:
             st.warning(f"As contagens referem-se a uma amostra de {amostra} avaliações "
                        "recuperadas, não à base inteira.")
@@ -210,6 +211,8 @@ def mostrar_resultado(res, latencia: float | None) -> None:
         for ev in res.evidencias:
             mostrar_evidencia(ev)
     mostrar_rastreabilidade(res, latencia)
+    if res.modelo:
+        st.caption(f"Modelo: {res.modelo}")
 
 
 def definir_exemplo(texto: str) -> None:

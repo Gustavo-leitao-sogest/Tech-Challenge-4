@@ -32,7 +32,7 @@ def _resultado(status: str = "ok") -> RagResult:
                      citacoes=[1] if status == "ok" else [],
                      evidencias=[_evid(1), _evid(2, "Outro texto.")],
                      consulta_transformada="entrega atrasada", filtros={"panorama_amostra": 2},
-                     tentativas=1)
+                     tentativas=1, modelo="gemini-x")
 
 
 def _rodar(resultado) -> tuple[AppTest, object]:
@@ -98,6 +98,12 @@ class TestRenderizacao(unittest.TestCase):
         self.assertTrue(any("amostra de 2" in w.value for w in at.warning))
         mock.assert_called_once()
         self.assertIsNone(mock.call_args.args[1])  # nenhum filtro alterado
+
+    def test_mostra_modelo(self):
+        at, _ = _rodar(_resultado())
+        self.assertFalse(at.exception)
+        self.assertIn("Modelo: gemini-x", [c.value for c in at.caption])
+        self.assertTrue(any("**Modelo:** gemini-x" in m.value for m in at.markdown))
 
     def test_insuficiente_mostra_proximas(self):
         at, _ = _rodar(_resultado("insuficiente"))

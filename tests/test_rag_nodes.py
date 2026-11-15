@@ -213,7 +213,7 @@ class TestGerador(unittest.TestCase):
             text = "   "
         with mock.patch.object(generator, "get_llm", return_value=LLMFalso(Msg())):
             out = generator.reescrever_consulta({"pergunta": "p", "consulta": "antiga", "tentativas": 0})
-        self.assertEqual(out, {"consulta": "antiga", "tentativas": 1})
+        self.assertEqual(out, {"consulta": "antiga", "tentativas": 1, "consulta_score": "antiga"})
 
     def test_sem_contagens_no_prompt(self):
         _, llm = self.gerar(RespostaLLM(resposta="x [1]", citacoes=[1], suficiente=True))
@@ -228,12 +228,23 @@ class TestGerador(unittest.TestCase):
             "[1] (nota 1/5 · 2018-01-02 · esporte_lazer · entregue com atraso: sim) chegou atrasado")
         self.assertIn("atraso: desconhecido", linhas[1])
 
+    def test_reescrever_preserva_consulta_score(self):
+        class Msg:
+            text = "hyde 2"
+        with mock.patch.object(generator, "get_llm", return_value=LLMFalso(Msg())):
+            out = generator.reescrever_consulta(
+                {"pergunta": "p", "consulta": "hyde 1", "consulta_score": "original", "tentativas": 1})
+        self.assertEqual(out["consulta"], "hyde 2")
+        self.assertEqual(out["tentativas"], 2)
+        self.assertNotIn("consulta_score", out)  # já existente: não sobrescreve
+
     def test_reescrever_e_recusar(self):
         class Msg:
             text = "  avaliacao hipotetica "
         with mock.patch.object(generator, "get_llm", return_value=LLMFalso(Msg())):
             out = generator.reescrever_consulta({"pergunta": "p", "tentativas": 0})
-        self.assertEqual(out, {"consulta": "avaliacao hipotetica", "tentativas": 1})
+        self.assertEqual(out, {"consulta": "avaliacao hipotetica", "tentativas": 1,
+                               "consulta_score": "p"})
         self.assertEqual(generator.recusar({})["status"], "insuficiente")
 
 

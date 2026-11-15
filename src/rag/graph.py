@@ -20,6 +20,7 @@ class RagState(TypedDict, total=False):
     modo: str | None
     analise: dict
     consulta: str
+    consulta_score: str
     filtros: dict
     evidencias: list[dict]
     contagens: dict | None

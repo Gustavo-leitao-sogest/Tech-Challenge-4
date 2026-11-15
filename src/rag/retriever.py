@@ -200,6 +200,12 @@ def buscar_bm25(consulta: str, filtros: dict | None = None,
     return [ids[i] for i in top if scores[i] > 0]
 
 
+def _vetor_score(state: dict, consulta: str) -> np.ndarray:
+    """Vetor contra o qual o score é medido: `consulta_score` (consulta original) se houver, senão a da busca."""
+    ref = state.get("consulta_score") or consulta
+    return _vetor_consulta(ref)
+
+
 def _evidencias(consulta_vec: np.ndarray, ids: list[str]) -> list[dict]:
     """Busca docs/metadados/vetores no Chroma e monta evidências com score cosseno, na ordem de `ids`."""
     if not ids:
@@ -236,7 +242,7 @@ def recuperar(state: dict) -> dict:
     if modo == "hibrida":
         rankings.append(buscar_bm25(consulta, filtros))
     ids = [i for i, _ in rrf(rankings)[:config.TOP_K_CONTEXT]]
-    return {"evidencias": _evidencias(_vetor_consulta(consulta), ids)}
+    return {"evidencias": _evidencias(_vetor_score(state, consulta), ids)}
 
 
 def recuperar_panorama(state: dict) -> dict:
@@ -252,7 +258,7 @@ def recuperar_panorama(state: dict) -> dict:
         return {"evidencias": [], "contagens": None, "panorama_amostra": 0}
     vecs = np.asarray(res["embeddings"][0], dtype=np.float32)
     escolhidos = mmr(q, vecs, config.PANORAMA_K, config.MMR_LAMBDA)
-    evid = _evidencias(q, [ids[i] for i in escolhidos])
+    evid = _evidencias(_vetor_score(state, consulta), [ids[i] for i in escolhidos])
     return {"evidencias": evid, "contagens": None, "panorama_amostra": len(evid)}
 
 

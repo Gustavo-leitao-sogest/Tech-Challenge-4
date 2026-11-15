@@ -106,6 +106,22 @@ class TestRobustez(unittest.TestCase):
         self.assertEqual(r._resolver_modo("densa"), "densa")
         self.assertEqual(r._resolver_modo(None), r.config.RETRIEVAL_MODE)
 
+    def test_score_usa_consulta_score(self):
+        vetores = {"hyde": np.array([1.0, 0.0], dtype=np.float32),
+                   "original": np.array([0.0, 1.0], dtype=np.float32)}
+        usados = []
+        col = mock.Mock()
+        col.get.return_value = {"ids": ["a"], "documents": ["t"],
+                                "metadatas": [{"review_score": 1, "categoria": "c"}],
+                                "embeddings": [[0.0, 1.0]]}
+        with mock.patch.object(r, "_colecao", return_value=col),              mock.patch.object(r, "_vetor_consulta", side_effect=lambda c: vetores[c]),              mock.patch.object(r, "buscar_densa", side_effect=lambda c, f: usados.append(c) or ["a"]):
+            st = {"consulta": "hyde", "consulta_score": "original", "modo": "densa"}
+            ev = r.recuperar(st)["evidencias"]
+            self.assertEqual(usados, ["hyde"])            # busca com o HyDE
+            self.assertAlmostEqual(ev[0]["score"], 1.0)   # score contra a original
+            ev = r.recuperar({"consulta": "hyde", "modo": "densa"})["evidencias"]
+            self.assertAlmostEqual(ev[0]["score"], 0.0)   # sem referência: usa a consulta da busca
+
     def test_evidencias_get_fora_de_ordem(self):
         meta = lambda n: {"review_score": n, "categoria": "c", "entregue_com_atraso": "nao"}
         col = mock.Mock()

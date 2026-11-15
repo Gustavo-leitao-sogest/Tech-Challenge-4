@@ -88,6 +88,26 @@ class TestGrafo(unittest.TestCase):
         self.assertEqual(r.status, "insuficiente")
         self.assertEqual(r.consulta_transformada, "hyde")
 
+    def test_retry_mantem_consulta_score(self):
+        from unittest import mock
+        from src.rag import generator
+        vistos = []
+
+        class Msg:
+            text = "hyde"
+
+        class LLM:
+            def invoke(self, prompt):
+                return Msg()
+
+        nos = _nos(suficiente=False)
+        nos["recuperar"] = lambda s: vistos.append((s["consulta"], s.get("consulta_score"))) or {"evidencias": EVID}
+        nos["reescrever"] = generator.reescrever_consulta
+        with mock.patch.object(generator, "get_llm", return_value=LLM()):
+            r = answer("p", grafo=build_graph(nos))
+        self.assertEqual(vistos, [("c0", None), ("hyde", "c0")])
+        self.assertEqual(r.consulta_transformada, "hyde")
+
     def test_panoramica(self):
         r, ch = self._rodar(tipo="panoramica", suficiente=False)  # limiar não vale na panorâmica
         self.assertEqual(ch, ["analisar", "panorama", "gerar"])

@@ -91,8 +91,13 @@ def gerar_resposta(state: dict) -> dict:
 def reescrever_consulta(state: dict) -> dict:
     """HyDE: avaliação hipotética como nova consulta; se vier vazia, mantém a anterior."""
     texto = (get_llm().invoke(PROMPT_HYDE_V1.format(pergunta=state["pergunta"])).text or "").strip()
-    consulta = texto or state.get("consulta") or state["pergunta"]
-    return {"consulta": consulta, "tentativas": state.get("tentativas", 0) + 1}
+    anterior = state.get("consulta") or state["pergunta"]
+    saida = {"consulta": texto or anterior, "tentativas": state.get("tentativas", 0) + 1}
+    # A primeira consulta (reescrita da análise) é a referência do score de suficiência:
+    # o texto hipotético serve para buscar, mas inflaria o cosseno de temas inexistentes.
+    if not state.get("consulta_score"):
+        saida["consulta_score"] = anterior
+    return saida
 
 
 def recusar(state: dict) -> dict:

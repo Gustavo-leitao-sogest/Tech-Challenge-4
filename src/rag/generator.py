@@ -2,7 +2,7 @@
 import logging
 
 from src.rag.guardrails import citacoes_invalidas, numeros_citados, validar_citacoes
-from src.rag.llm import get_llm
+from src.rag.llm import invocar_estruturado, invocar_texto
 from src.rag.prompts import (
     AVISO_CITACOES_INVALIDAS, INSTRUCAO_CONTAGENS, MSG_INSUFICIENTE, PROMPT_GERACAO_V2,
     PROMPT_HYDE_V1,
@@ -54,23 +54,13 @@ def _montar_prompt(state: dict) -> str:
     )
 
 
-def _invocar(chain, prompt: str) -> RespostaLLM | None:
-    """Chama o LLM; None se a saída estruturada vier vazia ou inválida."""
-    try:
-        return chain.invoke(prompt)
-    except ValueError as e:  # inclui ValidationError e OutputParserException
-        log.warning("Saída estruturada inválida na geração: %s", e)
-        return None
-
-
 def gerar_resposta(state: dict) -> dict:
     """Gera a resposta citada; refaz uma vez, avisando das citações inválidas."""
     validos = {e["n"] for e in state.get("evidencias", [])}
-    chain = get_llm().with_structured_output(RespostaLLM)
     prompt = _montar_prompt(state)
-    saida = None
+    saida, modelo = None, None
     for tentativa in range(2):
-        saida = _invocar(chain, prompt)
+        saida, modelo = invocar_estruturado(RespostaLLM, prompt)
         if saida is not None and validar_citacoes(saida.resposta, saida.citacoes, validos):
             break
         if tentativa == 0 and saida is not None:
@@ -81,18 +71,21 @@ def gerar_resposta(state: dict) -> dict:
             )
             prompt = _montar_prompt(state) + aviso
     else:
-        return recusar(state)
+        return {**recusar(state), "modelo": modelo}
     if not saida.suficiente:
-        return recusar(state)
+        return {**recusar(state), "modelo": modelo}
     citacoes = sorted(set(saida.citacoes) | set(numeros_citados(saida.resposta)))
-    return {"status": "ok", "resposta": saida.resposta, "citacoes": citacoes}
+    return {"status": "ok", "resposta": saida.resposta, "citacoes": citacoes,
+            "modelo": modelo}
 
 
 def reescrever_consulta(state: dict) -> dict:
     """HyDE: avaliação hipotética como nova consulta; se vier vazia, mantém a anterior."""
-    texto = (get_llm().invoke(PROMPT_HYDE_V1.format(pergunta=state["pergunta"])).text or "").strip()
+    texto, modelo = invocar_texto(PROMPT_HYDE_V1.format(pergunta=state["pergunta"]))
+    texto = texto.strip()
     anterior = state.get("consulta") or state["pergunta"]
-    saida = {"consulta": texto or anterior, "tentativas": state.get("tentativas", 0) + 1}
+    saida = {"consulta": texto or anterior, "tentativas": state.get("tentativas", 0) + 1,
+             "modelo": modelo}
     # A primeira consulta (reescrita da análise) é a referência do score de suficiência:
     # o texto hipotético serve para buscar, mas inflaria o cosseno de temas inexistentes.
     if not state.get("consulta_score"):

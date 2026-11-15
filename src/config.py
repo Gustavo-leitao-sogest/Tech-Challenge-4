@@ -23,6 +23,11 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
 LLM_MODEL = os.getenv("LLM_MODEL", "")
 LLM_TEMPERATURE = 0.0
 LLM_MAX_RETRIES = 3     # novas tentativas do cliente em erros transitórios (ex.: 503)
+# modelos alternativos (vírgulas no .env), tentados em ordem em erros de cota/demanda
+LLM_FALLBACK_MODELS = [m.strip() for m in os.getenv("LLM_FALLBACK_MODELS", "").split(",") if m.strip()]
+# Com fallback, o modelo principal não insiste antes de trocar. 1 = uma única chamada: no
+# google-genai `attempts` conta o total de chamadas, e 0 pode virar o padrão (5) em outras versões.
+LLM_MAX_RETRIES_COM_FALLBACK = 1
 LLM_TIMEOUT = 60        # segundos por chamada ao LLM
 
 # Embeddings

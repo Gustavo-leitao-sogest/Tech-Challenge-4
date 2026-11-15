@@ -33,7 +33,7 @@ def _nos(tipo="especifica", em_escopo=True, suficiente=True, evidencias=EVID, ch
 
     def gerar(s):
         ch.append("gerar")
-        return {"status": "ok", "resposta": "r [1]", "citacoes": [1]}
+        return {"status": "ok", "resposta": "r [1]", "citacoes": [1], "modelo": "m-x"}
 
     def recusar(s):
         ch.append("recusar")
@@ -79,6 +79,7 @@ class TestGrafo(unittest.TestCase):
         self.assertEqual(r.status, "ok")
         self.assertEqual(ch, ["analisar", "recuperar", "gerar"])
         self.assertEqual(r.citacoes, [1])
+        self.assertEqual(r.modelo, "m-x")
         self.assertEqual(r.evidencias[0].review_id, "a")
         self.assertEqual(r.filtros, {"nota_max": 2})
 
@@ -90,7 +91,7 @@ class TestGrafo(unittest.TestCase):
 
     def test_retry_mantem_consulta_score(self):
         from unittest import mock
-        from src.rag import generator
+        from src.rag import generator, llm as llm_mod
         vistos = []
 
         class Msg:
@@ -103,7 +104,7 @@ class TestGrafo(unittest.TestCase):
         nos = _nos(suficiente=False)
         nos["recuperar"] = lambda s: vistos.append((s["consulta"], s.get("consulta_score"))) or {"evidencias": EVID}
         nos["reescrever"] = generator.reescrever_consulta
-        with mock.patch.object(generator, "get_llm", return_value=LLM()):
+        with mock.patch.object(llm_mod, "get_llm", return_value=LLM()):
             r = answer("p", grafo=build_graph(nos))
         self.assertEqual(vistos, [("c0", None), ("hyde", "c0")])
         self.assertEqual(r.consulta_transformada, "hyde")

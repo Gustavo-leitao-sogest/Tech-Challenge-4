@@ -51,3 +51,4 @@ class RagResult(BaseModel):
     filtros: dict = {}
     contagens: dict | None = None  # rota panorâmica: frequências calculadas no código
     tentativas: int = 0  # reescritas HyDE feitas antes da resposta
+    modelo: str | None = None  # último modelo de LLM que respondeu (rastreabilidade)

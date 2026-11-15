@@ -30,6 +30,7 @@ class RagState(TypedDict, total=False):
     status: str
     resposta: str
     citacoes: list[int]
+    modelo: str
 
 
 # --- Rotas (funções puras) ---
@@ -116,6 +117,7 @@ def montar_resultado(state: dict) -> RagResult:
         filtros=filtros,
         contagens=state.get("contagens"),
         tentativas=state.get("tentativas", 0),
+        modelo=state.get("modelo"),
     )
 
 
@@ -148,6 +150,7 @@ def main() -> None:
         ap.error("informe a pergunta ou --mermaid")
     r = answer(args.pergunta)
     print(f"status: {r.status}")
+    print(f"modelo: {r.modelo}")
     print(f"consulta: {r.consulta_transformada}")
     print(f"filtros: {r.filtros}")
     print(f"\n{r.resposta}\n")

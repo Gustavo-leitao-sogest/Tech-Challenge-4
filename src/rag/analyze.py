@@ -6,7 +6,7 @@ from functools import lru_cache
 import pandas as pd
 
 from src import config
-from src.rag.llm import get_llm
+from src.rag.llm import invocar_estruturado
 from src.rag.prompts import MSG_FORA_DE_ESCOPO, PROMPT_ANALISE_V5
 from src.rag.schemas import AnalisePergunta
 
@@ -64,17 +64,13 @@ def _analise_padrao(pergunta: str) -> AnalisePergunta:
     return AnalisePergunta(em_escopo=True, tipo="especifica", consulta_reescrita=pergunta)
 
 
-def _invocar_analise(prompt: str, pergunta: str) -> tuple[AnalisePergunta, bool]:
-    """Chama o LLM; (análise, extraiu_filtros). Cai no padrão se a saída vier vazia/inválida."""
-    try:
-        analise = get_llm().with_structured_output(AnalisePergunta).invoke(prompt)
-    except ValueError as e:  # inclui ValidationError e OutputParserException
-        log.warning("Saída estruturada inválida na análise: %s", e)
-        analise = None
+def _invocar_analise(prompt: str, pergunta: str) -> tuple[AnalisePergunta, str]:
+    """Chama o LLM (com fallback de modelo); (análise, modelo). Padrão se a saída vier vazia."""
+    analise, modelo = invocar_estruturado(AnalisePergunta, prompt)
     if analise is None:
         log.warning("Análise indisponível; usando a pergunta como consulta, sem filtros extraídos.")
-        return _analise_padrao(pergunta), False
-    return analise, True
+        return _analise_padrao(pergunta), modelo
+    return analise, modelo
 
 
 def analisar_pergunta(state: dict) -> dict:
@@ -83,12 +79,13 @@ def analisar_pergunta(state: dict) -> dict:
     prompt = PROMPT_ANALISE_V5.format(
         pergunta=state["pergunta"], categorias="\n".join(validas)
     )
-    analise, _ = _invocar_analise(prompt, state["pergunta"])
+    analise, modelo = _invocar_analise(prompt, state["pergunta"])
     saida = {
         "analise": analise.model_dump(),
         "consulta": analise.consulta_reescrita or state["pergunta"],
         "filtros": montar_filtros(analise, state.get("filtros_ui"), validas),
         "tentativas": 0,
+        "modelo": modelo,
     }
     if not analise.em_escopo:
         saida.update(status="fora_de_escopo", resposta=MSG_FORA_DE_ESCOPO, citacoes=[])

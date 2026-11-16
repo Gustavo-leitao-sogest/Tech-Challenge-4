@@ -18,5 +18,12 @@ data/index/*
 !data/index/.gitkeep
 
 # Saídas locais
-eval/results/
+eval/results/*
+# relatórios citados no README (os demais são rodadas intermediárias)
+!eval/results/hibrida_20261115_201608.md
+!eval/results/densa_20261116_093930.md
+!eval/results/hibrida_20261115_201608.csv
+!eval/results/densa_20261116_093930.csv
+!eval/results/filtros_20261115_173315.md
+!eval/results/calibracao_20261115_173736.md
 *.log

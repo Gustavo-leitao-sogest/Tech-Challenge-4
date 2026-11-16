@@ -1,6 +1,6 @@
 """Fábrica de LLM por provedor.
 
-Importa só o pacote do provedor escolhido em LLM_PROVIDER. Modelo sempre vindo do .env.
+Importa só o pacote do provedor escolhido em LLM_PROVIDER. Modelo vindo do .env (default em config).
 """
 import logging
 import re
@@ -75,10 +75,12 @@ def get_llm(temperature: float | None = None, modelo: str | None = None,
                 model=model, temperature=temp, max_retries=retries,
                 timeout=config.LLM_TIMEOUT
             )
-        from langchain_ollama import ChatOllama
-        return ChatOllama(
-            model=model, temperature=temp, client_kwargs={"timeout": config.LLM_TIMEOUT}
-        )
+        if provider == "ollama":
+            from langchain_ollama import ChatOllama
+            return ChatOllama(
+                model=model, temperature=temp, client_kwargs={"timeout": config.LLM_TIMEOUT}
+            )
+        raise ValueError(f"Provedor {provider!r} sem implementacao na fabrica de LLM.")
     except ImportError as e:
         raise ImportError(
             f"Pacote do provedor {provider!r} nao instalado. "

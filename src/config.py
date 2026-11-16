@@ -19,8 +19,8 @@ BM25_PATH = DATA_INDEX / "bm25.pkl"
 CHROMA_COLLECTION = "olist_reviews"
 
 # LLM
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
-LLM_MODEL = os.getenv("LLM_MODEL", "")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "google")
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-3.1-flash-lite")
 LLM_TEMPERATURE = 0.0
 LLM_MAX_RETRIES = 3     # novas tentativas do cliente em erros transitórios (ex.: 503)
 # modelos alternativos (vírgulas no .env), tentados em ordem em erros de cota/demanda

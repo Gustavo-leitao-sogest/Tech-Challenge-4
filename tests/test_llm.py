@@ -40,6 +40,23 @@ class GetLlmTest(unittest.TestCase):
     def test_ollama(self):
         self._testa_provedor("ollama", "langchain_ollama", "ChatOllama")
 
+    def test_ollama_repassa_timeout_via_client_kwargs(self):
+        # a fabrica nao repassa max_retries/timeout ao ChatOllama: o timeout vai no cliente httpx via client_kwargs
+        fake_mod = mock.MagicMock()
+        with mock.patch.dict(sys.modules, {"langchain_ollama": fake_mod}), \
+             mock.patch.object(llm.config, "LLM_PROVIDER", "ollama"), \
+             mock.patch.object(llm.config, "LLM_MODEL", "m-teste"):
+            llm.get_llm(max_retries=0)
+        kw = fake_mod.ChatOllama.call_args.kwargs
+        self.assertEqual(kw["client_kwargs"], {"timeout": llm.config.LLM_TIMEOUT})
+        self.assertNotIn("max_retries", kw)
+        self.assertNotIn("timeout", kw)
+
+    def test_provedor_sem_ramo_na_fabrica(self):
+        with mock.patch.dict(llm.PROVEDORES, {"novo": "langchain-novo"}):
+            with self.assertRaises(ValueError):
+                _chamar("novo")
+
     def test_temperatura_padrao_da_config(self):
         fake_mod = mock.MagicMock()
         with mock.patch.dict(sys.modules, {"langchain_openai": fake_mod}):

@@ -248,12 +248,13 @@ sobre a base inteira não está implementada.
 
 ### Como o eval funciona
 
-`eval/questions.yaml` define 15 perguntas com o resultado esperado:
+`eval/questions.yaml` define 20 perguntas com o resultado esperado (a comparação principal "Densa × híbrida" abaixo usa as 15 originais; as 5 específicas têm subseção própria):
 
 | Grupo | Perguntas | Esperado |
 |---|---|---|
 | Exemplos do enunciado do desafio | 5 (`pdf1` a `pdf5`) | `ok` |
 | Com metadados (nota baixa, categoria, atraso) | 3 (`meta1` a `meta3`) | `ok` |
+| Específicas (tema pontual) | 5 (`esp1` a `esp5`) | `ok` |
 | Fora de escopo (inclui injeção de prompt) | 4 (`fora1` a `fora4`) | `fora_de_escopo` |
 | Sem evidência na base (app de realidade aumentada, chatbot com IA, entrega por drone) | 3 (`sem1` a `sem3`) | `insuficiente` |
 
@@ -295,11 +296,33 @@ Observações sobre a leitura:
   em que a híbrida trouxe vizinhos um pouco mais próximos do tema (precision das mais próximas 0,09 × 0,02; em `sem2`,
   0,27 × 0,07), sem mudar o status. A diferença de latência é ruído das chamadas ao LLM (a recuperação BM25 + RRF
   custa cerca de 0,2 s). A híbrida foi mantida pela robustez a termos exatos (nomes de produto, siglas, números);
-  medir esse ganho exige perguntas específicas com resposta esperada, o que fica como evolução.
+  o ganho nas perguntas específicas é medido na subseção seguinte.
 - A latência é dominada pelas chamadas ao LLM (análise, geração e, nas recusas, HyDE); a recuperação leva cerca de
   0,2 s por consulta depois do carregamento do índice (~18 s na primeira chamada).
 - "Precision das mais próximas" mede quanto das avaliações exibidas numa recusa é relevante; espera-se baixa, o que
   confirma que a recusa foi correta (não havia o que recuperar).
+
+### Perguntas específicas: densa × híbrida
+
+Cinco perguntas sobre um tema pontual (`esp1` a `esp5`), todas com resposta esperada e todas na rota específica
+(densa ou densa + BM25 + RRF, k=15). Mesmo modelo (`gemini-3.1-flash-lite`) e mesmo prompt nas duas rodadas, sem erros.
+
+| Id | Rota | Status densa | Status híbrida | Precision@k densa | Precision@k híbrida |
+|---|---|---|---|---|---|
+| esp1 (produto quebrado) | específica | ok | ok | 0,93 | 1,00 |
+| esp2 (nota fiscal) | específica | ok | ok | 0,40 | 0,87 |
+| esp3 (falsificado) | específica | ok | ok | 0,73 | 0,87 |
+| esp4 (voltagem) | específica | ok | ok | 0,80 | 0,93 |
+| esp5 (cor diferente) | específica | ok | ok | 1,00 | 1,00 |
+| **Média** | | 5/5 ok | 5/5 ok | **0,77** | **0,93** |
+
+Faithfulness média: densa 0,95, híbrida 0,97. Relatórios: [híbrida](eval/results/hibrida_20261116_192837.md) ([por pergunta](eval/results/hibrida_20261116_192837.csv)) · [densa](eval/results/densa_20261116_193253.md) ([por pergunta](eval/results/densa_20261116_193253.csv)).
+
+Nenhuma das cinco foi recusada pelo limiar de 0,905, então não houve falsa recusa. A híbrida teve precision@k maior
+ou igual à densa nas cinco perguntas, com a maior diferença em `esp2` (0,87 × 0,40), tema com termo exato ("nota fiscal").
+Com cinco perguntas, uma rodada por configuração e um juiz LLM, o resultado é indicativo e não conclusivo: a
+diferença de 0,16 na média pode em parte ser variação do juiz e da reescrita da consulta. A diferença de faithfulness
+(0,02) está dentro desse ruído.
 
 ### Efeito dos filtros de metadados
 
@@ -428,17 +451,17 @@ correto.
 | Chroma no Windows | O Chroma 1.5.9 no Windows não funciona em caminho com caracteres não-ASCII. O código usa o nome curto 8.3 do diretório; se não estiver disponível, defina `CHROMA_DIR` no `.env` para uma pasta só ASCII. |
 | Panorâmica conta sobre a amostra | As contagens ("11 das 25") valem para as 25 avaliações selecionadas, não para a base. Não há frequência por tópico sobre a base inteira, e as contagens são feitas pelo modelo de geração sobre a amostra, não por um cálculo no código. |
 | Limiar calibrado em poucas perguntas | O limiar de 0,905 saiu de 12 perguntas e é sensível ao modelo, porque a reescrita da consulta varia entre modelos. Ao trocar de modelo, recalibre (`--calibrar`). A margem entre os grupos é estreita (0,006). |
-| Eval sem perguntas específicas com resposta esperada | Todas as perguntas com resposta esperada seguem a rota panorâmica, então o eval não mede o ganho da busca híbrida sobre a densa; só as recusas passam pela busca específica. |
+| Poucas perguntas específicas | Só 5 perguntas específicas com resposta esperada (`esp1` a `esp5`) medem a busca híbrida contra a densa; as 15 originais seguem a rota panorâmica ou são recusas. O ganho observado (precision@k 0,93 × 0,77) é indicativo, não conclusivo. |
 | Falsa recusa | O limiar conservador aceita recusar casos com evidência fraca (1 em 7 na calibração). |
 | Cota gratuita do Gemini | A cota diária por modelo e projeto é baixa (centenas de chamadas por dia nos modelos "lite" e dezenas nos maiores) e limita rodadas completas do eval. O fallback mitiga na aplicação, mas o eval roda sem ele. |
 | Viés da base | Só cerca de 43% das avaliações têm texto, e quem comenta não representa todos os clientes: avaliações negativas são sobrerrepresentadas (nota 1: 11,5% do total, 20,6% dos textos). Os dados são de 2016 a 2018, com poucos registros nos primeiros meses. |
-| Juiz LLM como métrica | Precision@k e faithfulness são medidos por um LLM-juiz, que também erra e pode ter viés. O eval tem 15 perguntas, suficiente para comparar configurações, não para estimar desempenho em produção. |
+| Juiz LLM como métrica | Precision@k e faithfulness são medidos por um LLM-juiz, que também erra e pode ter viés. O eval tem 20 perguntas, suficiente para comparar configurações, não para estimar desempenho em produção. |
 | Atraso e filtros | O filtro por atraso usa a data estimada de entrega do pedido; na comparação de filtros ele reduziu a precision@k na pergunta de atraso (ver seção 7). |
 | Segurança do prompt | Avaliações são tratadas como dados (delimitadas por tags e com instrução explícita), e a pergunta passa por classificação de escopo, mas isso reduz, não elimina, o risco de prompt injection (OWASP LLM Top 10; NIST AI RMF). |
 
 **Evolução possível:** BERTopic offline para frequência real por tópico sobre a base inteira (o
 `src/index/build_topics.py` é só um esqueleto); re-ranking com CrossEncoder sobre os candidatos do RRF; ampliar o
-conjunto de perguntas do eval e de calibração; comparar `multilingual-e5-small` com outros modelos de embedding.
+conjunto de perguntas específicas do eval e de calibração; comparar `multilingual-e5-small` com outros modelos de embedding.
 
 ## 10. Instalação e execução
 

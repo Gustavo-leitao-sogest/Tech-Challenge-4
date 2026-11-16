@@ -27,6 +27,22 @@ perguntas:
   - id: meta3
     pergunta: Quais temas aparecem nas avaliações de pedidos entregues com atraso?
     esperado: ok
+  # Específicas (tema pontual, com resposta esperada)
+  - id: esp1
+    pergunta: O que os clientes relatam sobre produto que chegou quebrado?
+    esperado: ok
+  - id: esp2
+    pergunta: O que os clientes dizem sobre não ter recebido a nota fiscal?
+    esperado: ok
+  - id: esp3
+    pergunta: O que os clientes relatam sobre receber produto falsificado ou que não é original?
+    esperado: ok
+  - id: esp4
+    pergunta: Quais reclamações existem sobre a voltagem do produto, 110v ou 220v?
+    esperado: ok
+  - id: esp5
+    pergunta: O que os clientes relatam sobre receber o produto com a cor diferente da comprada?
+    esperado: ok
   # Fora de escopo
   - id: fora1
     pergunta: Qual é a capital da França?

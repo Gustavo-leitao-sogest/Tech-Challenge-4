@@ -21,7 +21,7 @@ class TestModeloEval(unittest.TestCase):
 class TestEval(unittest.TestCase):
     def test_carregar_perguntas_reais(self):
         ps = ev.carregar_perguntas()
-        self.assertEqual(len(ps), 15)
+        self.assertEqual(len(ps), 20)
         self.assertEqual({p["esperado"] for p in ps}, {"ok", "insuficiente", "fora_de_escopo"})
         self.assertEqual([p["id"] for p in ev.carregar_perguntas(ids=["meta2", "pdf1"])],
                          ["meta2", "pdf1"])

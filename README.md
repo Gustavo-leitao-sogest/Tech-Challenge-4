@@ -45,8 +45,8 @@ ser rastreável e saber dizer "não sei".
 ## 2. Arquitetura
 
 O fluxo é um **workflow** (LangGraph), não um agente autônomo: o caminho é previsível e o sistema não executa ações
-com efeito colateral, caso em que a aula de agentes recomenda workflows (IA Gen Aula 4). A aresta condicional
-implementa a recusa (LangChain Aula 5).
+com efeito colateral, então um workflow é mais simples de testar e de auditar do que um agente. A recusa é uma
+aresta condicional do grafo.
 
 O diagrama abaixo é o grafo real, exportado de `src/rag/graph.py` com `python -m src.rag.graph --mermaid`
 (os rótulos das arestas condicionais foram completados à mão, conforme o dicionário de rotas do código).
@@ -136,12 +136,12 @@ A preparação roda em `python -m src.data.prepare` e gera `data/processed/revie
 
 - **1 avaliação = 1 documento, sem chunking.** As mensagens são curtas (mediana de 53 caracteres, máximo de 208;
   títulos com no máximo 26) e já são unidades semânticas completas. Isso também preserva a rastreabilidade: cada
-  evidência é uma avaliação real (IA Gen Aula 2, trade-off de chunking).
-- **Duas limpezas** (Doc Aula 2, pré-processamento orientado ao uso posterior):
+  evidência é uma avaliação real (trade-off de chunking).
+- **Duas limpezas** (pré-processamento orientado ao uso posterior):
   - **leve**, para embedding, LLM e exibição: mantém acentos, pontuação e negações;
   - **agressiva**, só para o BM25: minúsculas, sem acento, abreviações expandidas ("vc", "n" para "não"),
     stopwords removidas exceto as negações.
-- **PII (LGPD, minimização; IA Gen Aula 6):** e-mail, telefone e CPF são mascarados (`[EMAIL]`, `[TELEFONE]`, `[CPF]`)
+- **PII (LGPD, minimização):** e-mail, telefone e CPF são mascarados (`[EMAIL]`, `[TELEFONE]`, `[CPF]`)
   antes de indexar, por melhor esforço: o CPF só é mascarado com dígito verificador válido e números precedidos de
   "pedido" são ignorados. No dado real a EDA encontrou 0 e-mails, 4 telefones mascarados e nenhum CPF com dígito válido.
 - **Metadados** (Chroma só aceita str/int/float/bool; ausente vira `"desconhecido"` ou `-1`, e nenhuma avaliação é
@@ -183,9 +183,9 @@ O texto da pergunta é tratado como dado, e tentativas de mudar as instruções 
 
 - **Densa:** e5 (`query: `/`passage: `) no Chroma, 50 candidatos.
 - **Lexical:** BM25 sobre o texto da limpeza agressiva, 50 candidatos.
-- **Fusão:** RRF com k=60, que une os rankings sem normalizar scores (IA Gen Aula 2, Doc Aula 3).
+- **Fusão:** RRF com k=60, que une os rankings sem normalizar scores.
 - **Filtros de metadados** (nota, categoria, período, atraso) aplicados nas duas buscas antes da fusão, restringindo
-  o espaço de busca (IA Gen Aula 2). Podem vir da pergunta ou da barra lateral do app.
+  o espaço de busca. Podem vir da pergunta ou da barra lateral do app.
 - **Seleção:** as 15 melhores evidências vão para o contexto.
 
 ### Suficiência e recusa
@@ -216,33 +216,33 @@ Nesta rota não há limiar de score: numa base de 42 mil avaliações, perguntas
 scores de consultas genéricas (0,88 a 0,89) não se distinguem dos de temas inexistentes. A barreira é o
 `suficiente=false` do gerador, mais a ausência de evidências (que leva à recusa).
 
-**Estado atual e evolução:** a frequência real por tópico exigiria agrupar a base inteira (BERTopic, Doc Aula 6). Isso
+**Estado atual e evolução:** a frequência real por tópico exigiria agrupar a base inteira (BERTopic). Isso
 ficou como evolução; o pipeline já tem o ponto de entrada (o bloco `<contagens>` do prompt de geração), que hoje fica
 vazio. Por isso as contagens da rota panorâmica são sempre **sobre a amostra de 25 avaliações**, e a análise por tópico
 sobre a base inteira não está implementada.
 
 ## 6. Decisões técnicas
 
-| Decisão | Por quê | Alternativa descartada | Base no curso |
-|---|---|---|---|
-| 1 avaliação = 1 documento, sem chunking | Avaliações curtas são unidades semânticas completas; preserva a rastreabilidade | Chunks de tamanho fixo com overlap | IA Gen Aula 2 |
-| Embeddings `multilingual-e5-small` | Treinado para recuperação, multilíngue, roda em CPU, 384 dimensões; prefixos `query: `/`passage: ` | `paraphrase-multilingual-MiniLM` | Doc Aula 4 |
-| Duas limpezas de texto (leve e agressiva) | Embedding precisa de contexto e negações; o BM25 ganha recall com normalização | Pipeline único | Doc Aula 2 |
-| BM25: "n°/nº" vira `numero` e "s/" vira `sem` antes de expandir "n" para "não" | Evita negação falsa no índice e preserva a negação abreviada | Expandir "n" sem contexto | Doc Aula 2 |
-| Busca híbrida com RRF (k=60) | Une semântica e termos exatos sem normalizar scores | Só densa | IA Gen Aula 2, Doc Aula 3 |
-| Workflow com LangGraph, não agente | Caminho previsível, sem ações com efeito colateral; a aresta condicional implementa a recusa | Agente ReAct | IA Gen Aula 4, LangChain Aula 5 |
-| Mascarar PII (e-mail, telefone, CPF) por melhor esforço | Minimização (LGPD); o objetivo é analisar experiência, não identificar pessoas. Valida o dígito do CPF, trata telefone com DDD antes do CPF e ignora número precedido de "pedido"; na dúvida, sobre-mascara | Indexar texto bruto; regex ingênua (mascara número de pedido) | IA Gen Aula 6 |
-| Cortar textos com menos de 3 caracteres alfanuméricos | Remove "..." sem perder respostas curtas legítimas ("bom", "recomendo"); funil 99.224 → 98.410 → 42.370 → 41.957 | Corte em 10 caracteres (perderia respostas legítimas) | Doc Aula 2 |
-| Atraso comparado por data (dia) | Entrega no dia estimado não é atraso (6,65% contra 7,98% por horário) | Comparar timestamp com a meia-noite da estimativa | IA Gen Aula 2 (metadados) |
-| Categoria principal + número de categorias; ausente vira `"desconhecido"` | O Chroma não aceita listas; só 0,73% das avaliações têm mais de uma categoria e nenhuma é descartada | Lista de categorias | IA Gen Aula 2 (metadados) |
-| Chroma em caminho ASCII (`config.chroma_path()`, nome curto 8.3 ou `CHROMA_DIR`) | O Chroma 1.5.9 no Windows não grava nem lê o HNSW em pasta com caracteres não-ASCII | Nenhuma (limitação do ambiente) | n/a |
-| Suficiência pelo cosseno consulta × documento, não pelo score RRF | O RRF (~0,016 a 0,033) não é comparável a um limiar; o cosseno é | Limiar sobre o RRF | IA Gen Aula 2 |
-| Limiar 0,905 sobre o 3º melhor cosseno, **contra a consulta original** e **só na rota específica** | Na calibração, com evidência 0,898 a 0,928 e sem evidência 0,849 a 0,892. Pontuando contra o texto do HyDE, os temas inexistentes chegam a 0,917 (2 de 5 acima de 0,905; ver [calibração](eval/results/calibracao_20261115_173736.md)), então o HyDE só serve para buscar. Em consultas genéricas (panorâmicas) nenhum limiar separa os grupos (0,88 a 0,89 em ambos), por isso a panorâmica não usa limiar. O LLM com `suficiente=false` é a segunda barreira. Em caso de dúvida, recusar: aceita-se 1 falsa recusa em 7 | Limiar 0,80 (deixava tudo passar); 0,895 (folga de 0,003); checagem lexical | Doc Aula 6; calibração conforme o material de avaliação do curso |
-| Rota panorâmica com MMR (80 → 25, lambda = 0,5) e contagem declarada "sobre a amostra" | Diversifica os temas sem treinar tópicos; honesto sobre o que a amostra representa | BERTopic (fica como evolução) | Doc Aula 6, IA Gen Aula 2 (MMR) |
-| Escopo amplo: tema de experiência de compra fica em escopo mesmo sem evidência | Demonstra o requisito de recusa por evidência insuficiente de ponta a ponta, em vez de barrar na análise | Barrar tudo na análise | LangChain Aula 5 |
-| Prompt de análise: filtro (nota, categoria, atraso, período) não é tema | "Principais temas dentro de uma fatia" é panorâmica; sem isso a pergunta virava específica, gerava consulta genérica e era recusada indevidamente | Prompt anterior | Doc Aula 6, LangChain Aula 5 |
-| LLM padrão `gemini-3.1-flash-lite`, com fallback configurável (`LLM_FALLBACK_MODELS`) | Cota do plano gratuito (a cota diária por modelo e projeto limita os modelos maiores); o fallback troca de modelo em erro de cota/servidor/timeout e registra qual respondeu. O eval roda **sem** fallback para os números serem comparáveis | Modelos maiores como padrão; modelo único sem reserva | LangChain Aula 1 (provedor plugável), LangChain Aulas 1 e 2 (fallbacks) |
-| Provedor de LLM plugável via `.env` | Trocar de modelo sem mexer no código; `gemini-2.5-*` não está disponível para chaves novas | Provedor fixo | LangChain Aula 1 |
+| Decisão | Por quê | Alternativa descartada |
+|---|---|---|
+| 1 avaliação = 1 documento, sem chunking | Avaliações curtas são unidades semânticas completas; preserva a rastreabilidade | Chunks de tamanho fixo com overlap |
+| Embeddings `multilingual-e5-small` | Treinado para recuperação, multilíngue, roda em CPU, 384 dimensões; prefixos `query: `/`passage: ` | `paraphrase-multilingual-MiniLM` |
+| Duas limpezas de texto (leve e agressiva) | Embedding precisa de contexto e negações; o BM25 ganha recall com normalização | Pipeline único |
+| BM25: "n°/nº" vira `numero` e "s/" vira `sem` antes de expandir "n" para "não" | Evita negação falsa no índice e preserva a negação abreviada | Expandir "n" sem contexto |
+| Busca híbrida com RRF (k=60) | Une semântica e termos exatos sem normalizar scores | Só densa |
+| Workflow com LangGraph, não agente | Caminho previsível, sem ações com efeito colateral; a aresta condicional implementa a recusa | Agente ReAct |
+| Mascarar PII (e-mail, telefone, CPF) por melhor esforço | Minimização (LGPD); o objetivo é analisar experiência, não identificar pessoas. Valida o dígito do CPF, trata telefone com DDD antes do CPF e ignora número precedido de "pedido"; na dúvida, sobre-mascara | Indexar texto bruto; regex ingênua (mascara número de pedido) |
+| Cortar textos com menos de 3 caracteres alfanuméricos | Remove "..." sem perder respostas curtas legítimas ("bom", "recomendo"); funil 99.224 → 98.410 → 42.370 → 41.957 | Corte em 10 caracteres (perderia respostas legítimas) |
+| Atraso comparado por data (dia) | Entrega no dia estimado não é atraso (6,65% contra 7,98% por horário) | Comparar timestamp com a meia-noite da estimativa |
+| Categoria principal + número de categorias; ausente vira `"desconhecido"` | O Chroma não aceita listas; só 0,73% das avaliações têm mais de uma categoria e nenhuma é descartada | Lista de categorias |
+| Chroma em caminho ASCII (`config.chroma_path()`, nome curto 8.3 ou `CHROMA_DIR`) | O Chroma 1.5.9 no Windows não grava nem lê o HNSW em pasta com caracteres não-ASCII | Nenhuma (limitação do ambiente) |
+| Suficiência pelo cosseno consulta × documento, não pelo score RRF | O RRF (~0,016 a 0,033) não é comparável a um limiar; o cosseno é | Limiar sobre o RRF |
+| Limiar 0,905 sobre o 3º melhor cosseno, **contra a consulta original** e **só na rota específica** | Na calibração, com evidência 0,898 a 0,928 e sem evidência 0,849 a 0,892. Pontuando contra o texto do HyDE, os temas inexistentes chegam a 0,917 (2 de 5 acima de 0,905; ver [calibração](eval/results/calibracao_20261115_173736.md)), então o HyDE só serve para buscar. Em consultas genéricas (panorâmicas) nenhum limiar separa os grupos (0,88 a 0,89 em ambos), por isso a panorâmica não usa limiar. O LLM com `suficiente=false` é a segunda barreira. Em caso de dúvida, recusar: aceita-se 1 falsa recusa em 7 | Limiar 0,80 (deixava tudo passar); 0,895 (folga de 0,003); checagem lexical |
+| Rota panorâmica com MMR (80 → 25, lambda = 0,5) e contagem declarada "sobre a amostra" | Diversifica os temas sem treinar tópicos; honesto sobre o que a amostra representa | BERTopic (fica como evolução) |
+| Escopo amplo: tema de experiência de compra fica em escopo mesmo sem evidência | Demonstra o requisito de recusa por evidência insuficiente de ponta a ponta, em vez de barrar na análise | Barrar tudo na análise |
+| Prompt de análise: filtro (nota, categoria, atraso, período) não é tema | "Principais temas dentro de uma fatia" é panorâmica; sem isso a pergunta virava específica, gerava consulta genérica e era recusada indevidamente | Prompt anterior |
+| LLM padrão `gemini-3.1-flash-lite`, com fallback configurável (`LLM_FALLBACK_MODELS`) | Cota do plano gratuito (a cota diária por modelo e projeto limita os modelos maiores); o fallback troca de modelo em erro de cota/servidor/timeout e registra qual respondeu. O eval roda **sem** fallback para os números serem comparáveis | Modelos maiores como padrão; modelo único sem reserva |
+| Provedor de LLM plugável via `.env` | Trocar de modelo sem mexer no código; `gemini-2.5-*` não está disponível para chaves novas | Provedor fixo |
 
 ## 7. Resultados da avaliação
 
@@ -434,9 +434,9 @@ correto.
 | Viés da base | Só cerca de 43% das avaliações têm texto, e quem comenta não representa todos os clientes: avaliações negativas são sobrerrepresentadas (nota 1: 11,5% do total, 20,6% dos textos). Os dados são de 2016 a 2018, com poucos registros nos primeiros meses. |
 | Juiz LLM como métrica | Precision@k e faithfulness são medidos por um LLM-juiz, que também erra e pode ter viés. O eval tem 15 perguntas, suficiente para comparar configurações, não para estimar desempenho em produção. |
 | Atraso e filtros | O filtro por atraso usa a data estimada de entrega do pedido; na comparação de filtros ele reduziu a precision@k na pergunta de atraso (ver seção 7). |
-| Segurança do prompt | Avaliações são tratadas como dados (delimitadas por tags e com instrução explícita), e a pergunta passa por classificação de escopo, mas isso reduz, não elimina, o risco de prompt injection (OWASP LLM Top 10; NIST AI RMF; IA Gen Aula 6). |
+| Segurança do prompt | Avaliações são tratadas como dados (delimitadas por tags e com instrução explícita), e a pergunta passa por classificação de escopo, mas isso reduz, não elimina, o risco de prompt injection (OWASP LLM Top 10; NIST AI RMF). |
 
-**Evolução possível:** BERTopic offline para frequência real por tópico sobre a base inteira (Doc Aula 6; o
+**Evolução possível:** BERTopic offline para frequência real por tópico sobre a base inteira (o
 `src/index/build_topics.py` é só um esqueleto); re-ranking com CrossEncoder sobre os candidatos do RRF; ampliar o
 conjunto de perguntas do eval e de calibração; comparar `multilingual-e5-small` com outros modelos de embedding.
 

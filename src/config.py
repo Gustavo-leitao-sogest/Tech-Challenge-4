@@ -38,7 +38,7 @@ CHROMA_INSERT_BATCH = 5000
 # Recuperação
 TOP_K_DENSE = 50       # candidatos da busca densa
 TOP_K_BM25 = 50        # candidatos do BM25
-RRF_K = 60             # constante do Reciprocal Rank Fusion (IA Gen Aula 2)
+RRF_K = 60             # constante do Reciprocal Rank Fusion
 TOP_K_CONTEXT = 15     # evidências enviadas ao LLM
 RETRIEVAL_MODE = "hibrida"  # "densa" | "hibrida" (o eval compara os dois)
 PANORAMA_FETCH_K = 80  # candidatos da busca densa antes do MMR (rota panorâmica)

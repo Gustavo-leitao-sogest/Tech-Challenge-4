@@ -1,0 +1,6 @@
+id,esperado,status,rota,tentativas,n_evidencias,n_citacoes,citacoes_validas,tem_citacao,top1,top3_media,precision_k,precision_proximas,faithfulness,latencia_s,tentativas_eval,modelo,erro
+esp1,ok,ok,especifica,0,15,14,True,True,0.9328751564025879,0.9303261240323385,0.9333333333333333,,1.0,77.41896700003417,1,gemini-3.1-flash-lite,
+esp2,ok,ok,especifica,0,15,15,True,True,0.9308885335922241,0.922524650891622,0.4,,1.0,20.447914200020023,1,gemini-3.1-flash-lite,
+esp3,ok,ok,especifica,0,15,12,True,True,0.919214129447937,0.9146141211191813,0.7333333333333333,,0.75,27.73909350001486,1,gemini-3.1-flash-lite,
+esp4,ok,ok,especifica,0,15,12,True,True,0.9394237399101257,0.93851105372111,0.8,,1.0,5.218658399942797,1,gemini-3.1-flash-lite,
+esp5,ok,ok,especifica,0,15,15,True,True,0.9404009580612183,0.937622586886088,1.0,,1.0,13.50271710002562,1,gemini-3.1-flash-lite,

@@ -26,4 +26,8 @@ eval/results/*
 !eval/results/densa_20261116_093930.csv
 !eval/results/filtros_20261115_173315.md
 !eval/results/calibracao_20261115_173736.md
+!eval/results/hibrida_20261116_192837.md
+!eval/results/hibrida_20261116_192837.csv
+!eval/results/densa_20261116_193253.md
+!eval/results/densa_20261116_193253.csv
 *.log

@@ -10,6 +10,10 @@ O pipeline é um workflow LangGraph: análise da pergunta, recuperação híbrid
 metadados, avaliação de suficiência com nova tentativa via HyDE, geração com citações validadas e recusa explícita
 (evidência insuficiente ou fora de escopo). Projeto do Tech Challenge da Fase 4 (POSTECH IA).
 
+> **Vídeo de apresentação:** será inserido neste repositório no dia **21/11**. Estou fora do país, em viagem a
+> trabalho desde 01/11, e, como faço o projeto sozinho no grupo, infelizmente não tive tempo de gravar e editar o
+> vídeo dentro do prazo. O código, a documentação e a avaliação já estão completos neste repositório.
+
 ## Sumário
 
 1. [Problema de negócio e objetivo](#1-problema-de-negócio-e-objetivo)
